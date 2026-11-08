@@ -1,0 +1,63 @@
+PERFUMES R&R — Catálogo real y acceso privado del equipo
+
+CONTENIDO
+37 perfumes extraídos del catálogo público https://catalogo.treinta.co/perfumesryr-79eea8 el 7 de noviembre de 2026 (Chile). Incluye 37 fotografías locales, precios y stock publicado (18 disponibles con 1 unidad, 19 agotados). Esta copia no se sincroniza automáticamente con Treinta. Confirma tus cantidades físicas antes de comenzar a vender.
+Se limpiaron errores tipográficos, fragmentos incompletos y texto de navegación. Cuatro productos no tenían descripción: JIVI Eternal Rouge Metallic, Lattafa Qaed Al Fursan Unlimited, Maison Alhambra Vogue Night azul y Paris Corner Khair Fusion rosa. Azzure Hunted Elixir solo aportaba marca, nombre y tamaño entre texto de navegación. Se dejaron los datos faltantes por confirmar; no se inventaron notas, duración ni valoraciones numéricas. Las familias se agruparon a partir del texto original. Las categorías no deducibles del nombre o descripción también quedan por confirmar.
+
+PASO 1 — ACTUALIZAR GITHUB
+Descomprime el ZIP. En perfumesrr/perfumesrr.github.io > Add file > Upload files sube a la raíz:
+index.html, styles.css, app.js, config.js, catalogo.js, admin.html, admin.js, hero.svg y la carpeta imagenes COMPLETA.
+Si config.js ya tiene tus datos de Supabase, conserva esos valores al reemplazarlo.
+Confirma con Commit changes. Settings > Pages > main > /(root).
+No subas el ZIP sin descomprimir. Los archivos SQL, LEEME y catalogo-origen.json son de apoyo y no hace falta publicarlos.
+Sin Supabase se muestra el catálogo importado. El panel privado queda BLOQUEADO, sin acceso de prueba, sin contraseña ficticia y sin cambios locales que parezcan reales.
+
+PASO 2 — ACTIVAR STOCK COMPARTIDO
+1. Crea tu proyecto en https://supabase.com/ y revisa el plan elegido.
+2. En SQL Editor ejecuta schema.sql completo. Es compatible con el esquema de la primera versión y no borra productos.
+3. Ejecuta importar-catalogo.sql. Importa los 37 perfumes, pero NO sobrescribe IDs ya existentes ni el stock que hayas modificado. Puedes volver a ejecutarlo sin duplicarlos.
+4. En config.js completa supabaseUrl con la URL de tu proyecto y supabaseKey con la clave PUBLICA publishable o anon. Nunca uses claves secret/service_role, contraseña del administrador ni contraseña de base de datos en GitHub.
+5. Sube config.js actualizado a GitHub.
+
+PASO 3 — AUTORIZAR PERSONAS (SOLO EL DUEÑO)
+Para cada persona:
+1. En Supabase > Authentication > Users crea su cuenta con su correo. Usa la invitación o recuperación gestionada por Supabase para que cada persona tenga su propia contraseña; configura las URLs de redirección si utilizas esos flujos. No compartas contraseñas por chat ni las pongas en el código.
+2. Copia el User UID (UUID) y ejecuta en SQL Editor:
+   insert into public.admins(user_id) values ('UUID-REAL') on conflict do nothing;
+3. Esa persona abre https://perfumesrr.github.io/admin.html e inicia sesión con su correo y contraseña.
+4. Para quitar acceso, ejecuta:
+   delete from public.admins where user_id = 'UUID-REAL';
+   Los siguientes cambios se rechazan aunque la sesión aún exista. La página de acceso es pública, pero los controles y los datos privados se protegen mediante sesión y reglas en la base. Registrar una cuenta no da permisos por sí solo. Solo el dueño con acceso al proyecto autoriza personas.
+
+USO DEL PANEL
+- −1: descuenta una unidad; no permite cantidades negativas.
+- +1: agrega una unidad.
+- Campo numérico + Guardar: establece la cantidad exacta.
+- Agotado: pone stock en cero; puede revertirse añadiendo unidades.
+- Filtros: todos, con stock, pocas unidades y agotados.
+- Ficha: edita nombre, marca, descripción, precio, foto, notas y demás características.
+- Agregar perfume: crea un producto.
+- Historial: fecha, cantidad anterior/nueva y correo de la persona que cambió el stock.
+- La sesión se mantiene solo mientras la página está abierta; al recargar o vencer debes volver a entrar.
+- Los clientes ven el stock al cargar, cada 30 segundos y al volver a su pestaña.
+- Si otra persona cambia la cantidad antes de guardar, se rechaza el guardado antiguo y se actualiza el listado. Las fichas completas también tienen control de versión para evitar sobrescribir cambios recientes.
+- WhatsApp no reserva ni descuenta unidades automáticamente. El equipo confirma la venta y registra la salida.
+
+FOTOS
+Las fotos importadas están guardadas en imagenes/ y funcionan sin depender de Treinta. Para agregar otra, sube una foto propia a esa carpeta en GitHub, con nombre sencillo como perfume-nuevo.jpg. En la ficha coloca imagenes/perfume-nuevo.jpg o un enlace HTTPS de una foto autorizada. El panel acepta enlaces/rutas; no incluye carga directa de archivos.
+
+PRUEBAS ANTES DE ACTIVAR LA TIENDA
+La conexión a tu Supabase no está configurada en esta entrega. Después de completar los pasos:
+1. Inicia sesión con un usuario autorizado y cambia un stock.
+2. Abre la tienda en otra ventana; el cambio debe verse dentro de 30 segundos.
+3. Comprueba el historial.
+4. Con una cuenta no incluida en admins, el panel debe rechazar el acceso.
+5. Quita acceso a una cuenta de prueba y comprueba que ya no puede guardar.
+No elimines RLS ni uses la clave service_role para evitar errores.
+
+ARCHIVOS
+schema.sql: tablas, permisos, historial y migración.
+importar-catalogo.sql: carga inicial segura de los 37 productos.
+catalogo.js: copia pública inicial para vista sin base de datos.
+catalogo-origen.json: respaldo de nombres, precios, cantidades y descripciones originales para revisión.
+Fuentes y documentos: https://supabase.com/docs/guides/database/postgres/row-level-security
